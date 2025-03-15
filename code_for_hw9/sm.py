@@ -37,15 +37,15 @@ class Accumulator(SM):
 
 
 class Binary_Addition(SM):
-    start_state = None # Change
+    start_state = (0, 0)
 
     def transition_fn(self, s, x):
-        # Your code here
-        pass
+        carry = s[0]
+        res = x[0] + x[1] + carry
+        return (res // 2, res % 2)
 
     def output_fn(self, s):
-        # Your code here
-        pass
+        return s[1]
 
 
 class Reverser(SM):
