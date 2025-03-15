@@ -49,15 +49,24 @@ class Binary_Addition(SM):
 
 
 class Reverser(SM):
-    start_state = None
+    start_state = [[], False]
 
     def transition_fn(self, s, x):
-        # Your code here
-        pass
+        new_s = s
+        if not s[1]:
+            new_s[0].append(x)
+        if x == 'end':
+            new_s[1] = True
+        if new_s[1]:
+            if new_s[0]:
+                new_s[0].pop()
+        return new_s
 
     def output_fn(self, s):
-        # Your code here
-        pass
+        if s[1]:
+            if s[0]:
+                return s[0][-1]
+        return None
 
 
 class RNN(SM):
