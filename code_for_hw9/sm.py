@@ -17,8 +17,13 @@ class SM:
     def transduce(self, input_seq):
         '''input_seq: the given list of inputs
            returns:   list of outputs given the inputs'''
-        # Your code here
-        pass
+        cur_state = self.__class__.start_state
+        ret = []
+        for x in input_seq:
+            cur_state = self.transition_fn(cur_state, x)
+            ret.append(self.output_fn(cur_state))
+        return ret
+
 
 
 class Accumulator(SM):
