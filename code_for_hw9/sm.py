@@ -1,3 +1,4 @@
+import numpy as np
 from util import *
 
 class SM:
@@ -71,13 +72,19 @@ class Reverser(SM):
 
 class RNN(SM):
     def __init__(self, Wsx, Wss, Wo, Wss_0, Wo_0, f1, f2):
-        # Your code here
-        pass
+        self.Wsx = Wsx
+        self.Wss = Wss
+        self.Wo = Wo
+        self.Wss_0 = Wss_0
+        self.Wo_0 = Wo_0
+        self.f1 = f1
+        self.f2 = f2
+        r, c = Wss.shape
+        self.__class__.start_state = np.array([[0] for i in range(c)])
 
-    def transition_fn(self, s, i):
-        # Your code here
-        pass
+    def transition_fn(self, s, x):
+        new_s = self.f1(self.Wss @ s + self.Wsx @ x + self.Wss_0)
+        return new_s
 
     def output_fn(self, s):
-        # Your code here
-        pass
+        return self.f2(self.Wo @ s + self.Wo_0)
