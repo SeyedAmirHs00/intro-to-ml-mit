@@ -3,6 +3,7 @@ from dist import uniform_dist, delta_dist, mixture_dist
 from util import *
 import random
 
+
 class MDP:
     # Needs the following attributes:
     # states: list or set of states
@@ -14,8 +15,15 @@ class MDP:
     # transition_model: function from (state, action) into DDist over next state
     # reward_fn: function from (state, action) to real-valued reward
 
-    def __init__(self, states, actions, transition_model, reward_fn, 
-                     discount_factor = 1.0, start_dist = None):
+    def __init__(
+        self,
+        states,
+        actions,
+        transition_model,
+        reward_fn,
+        discount_factor=1.0,
+        start_dist=None,
+    ):
         self.states = states
         self.actions = actions
         self.transition_model = transition_model
@@ -38,9 +46,15 @@ class MDP:
     # terminal state is encountered, sample next state from initial
     # state distribution
     def sim_transition(self, s, a):
-        return (self.reward_fn(s, a),
-                self.init_state() if self.terminal(s) else
-                    self.transition_model(s, a).draw())
+        return (
+            self.reward_fn(s, a),
+            (
+                self.init_state()
+                if self.terminal(s)
+                else self.transition_model(s, a).draw()
+            ),
+        )
+
 
 # Perform value iteration on an MDP, also given an instance of a q
 # function.  Terminate when the max-norm distance between two
@@ -53,10 +67,26 @@ class MDP:
 # dictionary mapping (s, a) pairs into Q values This must be
 # initialized before interactive_fn is called the first time.
 
-def value_iteration(mdp, q, eps = 0.01, interactive_fn = None,
-                    max_iters = 10000):
-    # Your code here
-    pass
+
+def value_iteration(mdp, q, eps=0.01, interactive_fn=None, max_iters=10000):
+    last_q = q.copy()
+    new_q = last_q.copy()
+    for iter in range(max_iters):
+        for s in new_q.states:
+            for a in new_q.actions:
+                reward = mdp.reward_fn(s, a)
+                res = reward
+                s_prime_dist = mdp.transition_model(s, a)
+                for s_prime in s_prime_dist.support():
+                    res += s_prime_dist.prob(s_prime) * mdp.discount_factor * value(last_q, s_prime)
+                new_q.set(s, a, res)
+        if interactive_fn:
+            interactive_fn(new_q)
+        if max_diff(last_q, new_q) < eps:
+            return new_q
+        last_q = new_q.copy()
+    return new_q
+
 
 # Compute the q value of action a in state s with horizon h, using
 # expectimax
@@ -64,10 +94,11 @@ def q_em(mdp, s, a, h):
     # Your code here
     pass
 
+
 # Given a state, return the value of that state, with respect to the
 # current definition of the q function
 def value(q, s):
-    """ Return Q*(s,a) based on current Q
+    """Return Q*(s,a) based on current Q
 
     >>> q = TabularQ([0,1,2,3],['b','c'])
     >>> q.set(0, 'b', 5)
@@ -76,13 +107,14 @@ def value(q, s):
     >>> q_star
     10
     """
-    # Your code here
-    pass
+    ret = max([q.get(s, a) for a in q.actions])
+    return ret
+
 
 # Given a state, return the action that is greedy with reespect to the
 # current definition of the q function
 def greedy(q, s):
-    """ Return pi*(s) based on a greedy strategy.
+    """Return pi*(s) based on a greedy strategy.
 
     >>> q = TabularQ([0,1,2,3],['b','c'])
     >>> q.set(0, 'b', 5)
@@ -93,11 +125,12 @@ def greedy(q, s):
     >>> greedy(q, 1)
     'b'
     """
-    # Your code here
-    pass
+    ret = argmax(q.actions, lambda a: q.get(s, a))
+    return ret
 
-def epsilon_greedy(q, s, eps = 0.5):
-    """ Return an action.
+
+def epsilon_greedy(q, s, eps=0.5):
+    """Return an action.
 
     >>> q = TabularQ([0,1,2,3],['b','c'])
     >>> q.set(0, 'b', 5)
@@ -110,22 +143,35 @@ def epsilon_greedy(q, s, eps = 0.5):
     'b'
     """
     if random.random() < eps:  # True with prob eps, random action
-        # Your code here
-        pass
+        return uniform_dist(q.actions).draw()
     else:
-        # Your code here
-        pass
+        return greedy(q, s)
+
 
 class TabularQ:
     def __init__(self, states, actions):
         self.actions = actions
         self.states = states
         self.q = dict([((s, a), 0.0) for s in states for a in actions])
+
     def copy(self):
         q_copy = TabularQ(self.states, self.actions)
         q_copy.q.update(self.q)
         return q_copy
+
     def set(self, s, a, v):
-        self.q[(s,a)] = v
+        self.q[(s, a)] = v
+
     def get(self, s, a):
-        return self.q[(s,a)]
+        return self.q[(s, a)]
+
+
+def max_diff(q1: TabularQ, q2: TabularQ) -> float:
+    """Return the maximum difference between the Q values of any state-action pair"""
+    max_diff = 0
+    for s in q1.states:
+        for a in q1.actions:
+            diff = abs(q1.get(s, a) - q2.get(s, a))
+            if diff > max_diff:
+                max_diff = diff
+    return max_diff
